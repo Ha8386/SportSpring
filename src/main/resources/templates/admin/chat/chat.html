@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <title>Admin - Hỗ Trợ Khách Hàng</title>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" th:href="@{/css/sidebar.css}"/>
+
+    <style>
+        /* Khung chung giống productManagement */
+        body{margin:0;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Helvetica,Arial}
+        .container{display:flex;min-height:100vh}
+
+        nav{width:260px;flex:0 0 260px}
+        .main-content{flex:1;display:flex;flex-direction:column;background:#f7f9fc}
+
+        .header{
+          display:flex;align-items:center;justify-content:space-between;
+          padding:16px 20px;background:#fff;border-bottom:1px solid #eaecef
+        }
+        .header h1{font-size:20px;margin:0}
+
+        /* Layout 2 cột trong nội dung */
+        .content{
+          display:grid;grid-template-columns: 320px 1fr;gap:16px;
+          padding:16px;align-items:start
+        }
+
+        /* Danh sách hội thoại */
+        .panel{
+          background:#fff;border:1px solid #eaecef;border-radius:12px;box-shadow:0 6px 16px rgba(0,0,0,.04)
+        }
+        .panel header{
+          padding:12px 14px;border-bottom:1px solid #eef2f7;font-weight:600
+        }
+        .panel .body{padding:12px 14px}
+
+        .conv-list{max-height:60vh;overflow:auto;margin:0;padding:0;list-style:none}
+        .conv-item{
+          padding:10px;border:1px solid #eef2f7;border-radius:10px;margin-bottom:8px;background:#fbfcff;
+          display:flex;align-items:center;justify-content:space-between;gap:6px
+        }
+        .conv-item .meta{font-size:12px;color:#667085}
+
+        .filters{display:flex;gap:8px;margin-bottom:10px}
+        .filters select,.filters input{border:1px solid #e3e8ef;border-radius:8px;padding:8px}
+
+        .join-row{display:flex;gap:8px;margin-top:8px}
+        .join-row input{flex:1;border:1px solid #e3e8ef;border-radius:8px;padding:8px}
+
+        /* Khu chat */
+        .chat-wrap{display:flex;flex-direction:column;height:70vh}
+        .chat-header{
+          padding:10px 14px;border-bottom:1px solid #eef2f7;background:#fff;
+          display:flex;align-items:center;justify-content:space-between
+        }
+        .chat-title{font-weight:600}
+        .chat-room-badge{font-size:12px;background:#eef2f7;padding:4px 8px;border-radius:999px}
+
+        .chat-log{
+          flex:1;overflow:auto;background:#fbfcfe;padding:12px 14px
+        }
+        .msg{display:flex;margin:8px 0;gap:8px;align-items:flex-end}
+        .msg.admin{justify-content:flex-end}
+        .msg.user{justify-content:flex-start}
+        .bubble{
+          max-width:72%;padding:10px 12px;border-radius:14px;white-space:pre-wrap;word-break:break-word
+        }
+        .msg.admin .bubble{background:#155eef;color:#fff;border-bottom-right-radius:4px}
+        .msg.user .bubble{background:#eef2f7;color:#111827;border-bottom-left-radius:4px}
+        .msg.ai .bubble{background:#e9f7ff;color:#0b4a6f;border-bottom-left-radius:4px}
+        .avatar{width:28px;height:28px;border-radius:50%;object-fit:cover}
+
+        .chat-input{
+          display:flex;gap:8px;border-top:1px solid #eef2f7;background:#fff;padding:10px 12px
+        }
+        .chat-input input{flex:1;border:1px solid #e3e8ef;border-radius:10px;padding:10px}
+        .btn{border:0;border-radius:10px;padding:8px 12px;cursor:pointer}
+        .btn-primary{background:#155eef;color:#fff}
+        .btn-ghost{background:#fff;color:#344054;border:1px solid #e3e8ef}
+        .btn-warning{background:#f59e0b;color:#fff}
+        .muted{color:#98a2b3;font-size:12px}
+    </style>
+</head>
+<body>
+<div class="container">
+    <!-- Sidebar -->
+    <nav>
+        <div class="logo">
+            <img th:src="@{/image/logo.jpg}" alt="Logo"/>
+        </div>
+        <a href="/admin" class="nav-link"><i class="fas fa-home"></i><span>Trang Quản Trị</span></a>
+        <a href="/admin/user" class="nav-link"><i class="fas fa-users"></i><span>Quản Lý Người Dùng</span></a>
+
+        <div class="product-menu">
+            <a href="#" class="nav-link" onclick="toggleProductMenu(event)">
+                <div><i class="fas fa-box"></i><span>Quản Lý Sản Phẩm</span></div>
+            </a>
+            <div class="submenu" id="productSubmenu">
+                <a href="/admin/product" class="nav-link"><i class="fas fa-cube"></i><span>Sản Phẩm</span></a>
+                <a href="/admin/category" class="nav-link"><i class="fas fa-tags"></i><span>Danh Mục</span></a>
+                <a href="/admin/brand" class="nav-link"><i class="fas fa-certificate"></i><span>Thương Hiệu</span></a>
+            </div>
+        </div>
+
+        <a href="/admin/comment" class="nav-link"><i class="fas fa-comments"></i><span>Quản Lý Đánh Giá</span></a>
+        <a href="/admin/order" class="nav-link"><i class="fas fa-shopping-cart"></i><span>Quản Lý Đơn Hàng</span></a>
+        <a href="/admin/revenue" class="nav-link"><i class="fas fa-chart-line"></i><span>Quản Lý Doanh Thu</span></a>
+        <a class="nav-link active" href="/admin/chat"><i class="fas fa-headset"></i><span>Hỗ Trợ Khách</span></a>
+
+        <a href="#" class="nav-link" onclick="document.getElementById('logoutForm').submit(); return false;">
+            <i class="fas fa-sign-out-alt"></i><span>Đăng xuất</span>
+        </a>
+        <form id="logoutForm" th:action="@{/logout}" method="post" style="display:none;">
+            <input th:if="${_csrf != null}" type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+        </form>
+    </nav>
+
+    <!-- Main -->
+    <div class="main-content">
+        <div class="header">
+            <h1>Hỗ Trợ Khách Hàng</h1>
+            <div class="header-actions muted">
+                Realtime WebSocket · STOMP /app/sendMessage → /topic/conversation.{id}
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- Cột trái: danh sách hội thoại -->
+            <section class="panel">
+                <header><i class="fa fa-inbox"></i> Hàng đợi hội thoại</header>
+                <div class="body">
+                    <div class="filters">
+                        <select id="statusFilter">
+                            <option value="ESCALATED">Đang chờ (ESCALATED)</option>
+                            <option value="OPEN">Đang mở (OPEN)</option>
+                            <option value="RESOLVED">Đã xong (RESOLVED)</option>
+                        </select>
+                        <input id="keyword" placeholder="Tìm theo ID hoặc user..."/>
+                        <button class="btn btn-ghost" onclick="loadConversations()"><i class="fa fa-search"></i></button>
+                    </div>
+
+                    <ul id="convList" class="conv-list">
+                        <!-- TODO: sẽ render từ API. Demo tạm -->
+                        <!-- <li class="conv-item"><div>#15 · user=1001<br><span class="meta">ESCALATED · 09:40</span></div><button class="btn btn-primary" onclick="join(15)">Tham gia</button></li> -->
+                    </ul>
+
+                    <div class="join-row">
+                        <input id="convIdInput" type="number" placeholder="Nhập conversationId để tham gia"/>
+                        <button class="btn btn-primary" onclick="joinByInput()"><i class="fa fa-sign-in-alt"></i> Tham gia</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Cột phải: khu chat -->
+            <section class="panel chat-wrap">
+                <div class="chat-header">
+                    <div class="chat-title"><i class="fa fa-comments"></i> <span id="roomTitle">Chưa chọn hội thoại</span></div>
+                    <div class="actions">
+                        <span class="chat-room-badge" id="roomBadge">-</span>
+                        <button class="btn btn-warning" onclick="resolveConv()" title="Kết thúc & đánh dấu đã xử lý"><i class="fa fa-check"></i> Kết thúc</button>
+                    </div>
+                </div>
+
+                <div id="chatLog" class="chat-log">
+                    <div class="muted">Chọn một hội thoại ở cột trái hoặc nhập ID để bắt đầu.</div>
+                </div>
+
+                <div class="chat-input">
+                    <input id="chatText" placeholder="Nhập tin nhắn... (Enter để gửi)" disabled/>
+                    <button class="btn btn-primary" id="btnSend" onclick="sendMsg()" disabled><i class="fa fa-paper-plane"></i> Gửi</button>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+<script>
+    // ======= State =======
+    let stomp = null;
+    let currentConvId = null;
+
+    function getCsrf(){
+      const m = document.querySelector('meta[name="_csrf"]');
+      return m ? m.getAttribute('content') : '';
+    }
+
+    function connectWs(){
+      if(stomp) return;
+      const sock = new SockJS('/ws-chat');
+      stomp = Stomp.over(sock);
+      stomp.connect({}, ()=> {
+        console.log('WS connected.');
+        // Khi đã kết nối, nếu có phòng đang mở -> subscribe luôn
+        if(currentConvId) subscribeRoom(currentConvId);
+      });
+    }
+
+    function subscribeRoom(id){
+      if(!stomp || !stomp.connected){ connectWs(); setTimeout(()=>subscribeRoom(id), 300); return; }
+      stomp.subscribe('/topic/conversation.'+id, (frame)=>{
+        const msg = JSON.parse(frame.body);
+        // Render message từ USER/AI/ADMIN
+        if(msg.senderType === 'ADMIN'){
+          appendMsg('admin', msg.content);
+        } else if (msg.senderType === 'USER'){
+          appendMsg('user', msg.content);
+        } else {
+          appendMsg('ai', msg.content);
+        }
+      });
+    }
+
+    function join(id){
+      currentConvId = id;
+      document.getElementById('roomTitle').innerText = 'Phòng #' + id;
+      document.getElementById('roomBadge').innerText = 'Đang chat';
+      document.getElementById('chatText').disabled = false;
+      document.getElementById('btnSend').disabled = false;
+      document.getElementById('chatLog').innerHTML = ''; // clear log
+
+      connectWs();
+      subscribeRoom(id);
+
+      // TODO: Tải lịch sử nếu có API
+      // fetch(`/api/admin/conversations/${id}/messages`).then(r=>r.json()).then(renderHistory)
+    }
+
+    function joinByInput(){
+      const v = document.getElementById('convIdInput').value.trim();
+      if(!v) return;
+      join(parseInt(v,10));
+    }
+
+    function sendMsg(){
+      const input = document.getElementById('chatText');
+      const text = input.value.trim();
+      if(!text || !currentConvId) return;
+      // Hiển thị ngay phía admin
+      appendMsg('admin', text);
+      input.value = '';
+
+      stomp.send('/app/sendMessage', {}, JSON.stringify({
+        conversationId: currentConvId,
+        senderType: 'ADMIN',
+        content: text
+      }));
+    }
+
+    function appendMsg(role, text){
+      const wrap = document.getElementById('chatLog');
+      const cls = role === 'admin' ? 'admin' : (role === 'user' ? 'user' : 'ai');
+      const html = `
+        <div class="msg ${cls}">
+          ${cls!=='admin' ? '<img class="avatar" src="/image/user.png" onerror="this.style.display=\'none\'"/>' : ''}
+          <div class="bubble">${text}</div>
+          ${cls==='admin' ? '<img class="avatar" src="/image/admin.png" onerror="this.style.display=\'none\'"/>' : ''}
+        </div>`;
+      wrap.insertAdjacentHTML('beforeend', html);
+      wrap.scrollTop = wrap.scrollHeight;
+    }
+
+    function resolveConv(){
+      if(!currentConvId) return;
+      appendMsg('ai', '<i>Đã đánh dấu cuộc trò chuyện là ĐÃ XỬ LÝ.</i>');
+      document.getElementById('roomBadge').innerText = 'Đã xong';
+      // Gọi API nếu bạn có endpoint:
+      // fetch(`/api/admin/conversations/${currentConvId}/resolve`, {method:'POST', headers:{'X-CSRF-TOKEN': getCsrf()}})
+    }
+
+    // Danh sách hội thoại (tạm demo). Bạn thay bằng call API thật.
+    function loadConversations(){
+      const ul = document.getElementById('convList');
+      ul.innerHTML = '';
+      // TODO: fetch(`/api/admin/conversations?status=${status}&q=${kw}`)
+      const demo = [
+        {id: 101, userId: 3001, status: 'ESCALATED', time: '09:40'},
+        {id: 102, userId: 3002, status: 'OPEN', time: '09:45'}
+      ];
+      demo.forEach(c=>{
+        const li = document.createElement('li');
+        li.className='conv-item';
+        li.innerHTML = `<div>
+            #${c.id} · user=${c.userId}<br><span class="meta">${c.status} · ${c.time}</span>
+          </div>
+          <button class="btn btn-primary" onclick="join(${c.id})">Tham gia</button>`;
+        ul.appendChild(li);
+      });
+    }
+
+    // Khởi tạo
+    loadConversations();
+    connectWs();
+
+    // Enter để gửi
+    document.addEventListener('keydown', (e)=>{
+      if(e.key==='Enter' && document.activeElement.id==='chatText'){ sendMsg(); }
+    });
+
+    // Toggle submenu sản phẩm (giữ hành vi giống trang sản phẩm)
+    function toggleProductMenu(e){
+      e.preventDefault();
+      const sm = document.getElementById('productSubmenu');
+      sm.style.display = (sm.style.display==='block' ? 'none' : 'block');
+    }
+</script>
+</body>
+</html>

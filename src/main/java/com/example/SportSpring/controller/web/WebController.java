@@ -1,0 +1,78 @@
+package com.example.SportSpring.controller.web;
+
+import com.example.SportSpring.entity.CommentEntity;
+import com.example.SportSpring.entity.UserEntity;
+import com.example.SportSpring.enums.StatusEnum;
+import com.example.SportSpring.service.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.ModelAndView;
+
+@Controller
+@RequestMapping("/home")
+public class WebController {
+
+    @Autowired
+    private ProductService productService;
+
+    @Autowired
+    private BrandService brandService;
+
+    @Autowired
+    private CartService cartService;
+
+    @Autowired
+    private GetUserAuthentication getUserAuthentication;
+
+    @Autowired
+    private CommentService commentService;
+
+    @GetMapping()
+    public ModelAndView homePage() {
+        ModelAndView mav = new ModelAndView("web/home");
+
+        mav.addObject("brands", brandService.getAllPaginated(0,8, "id", "asc", null, StatusEnum.Active));
+        mav.addObject("products", productService.getAllProductsPaginated(0,10, "id", "asc", null, StatusEnum.Active));
+        mav.addObject("productSales", productService.getProductSale());
+        mav.addObject("productDates", productService.getProductNewest());
+        mav.addObject("quantityProduct", productService.getProductNewest().size());
+        
+        UserEntity user = getUserAuthentication.getUser();
+        if (user != null) {
+            mav.addObject("user", user);
+            mav.addObject("quantity", cartService.getCountByUserId(user.getId()));
+        }
+
+        return mav;
+    }
+
+    @GetMapping("/contact")
+    public ModelAndView getContact() {
+        return new ModelAndView("web/contact");
+    }
+
+    @GetMapping("/introduce")
+    public ModelAndView getIntroduce() {
+        return new ModelAndView("web/introduce");
+    }
+    
+    @GetMapping("/product/{productId}")
+    public ModelAndView getProductDetail(@PathVariable Long productId) {
+        ModelAndView mav = new ModelAndView("web/product_detail")
+                .addObject("product", productService.getProductById(productId))
+                .addObject("newComment", new CommentEntity())
+                .addObject("comments", commentService.findByProductId(productId));
+
+        UserEntity user = getUserAuthentication.getUser();
+        if (user != null) {
+            mav.addObject("user", user);
+            mav.addObject("count", cartService.getCountByUserId(user.getId()));
+        }
+
+        return mav;
+    }
+    
+}

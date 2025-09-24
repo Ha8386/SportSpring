@@ -1,0 +1,58 @@
+package com.example.SportSpring.entity;
+
+import com.example.SportSpring.enums.StatusOrderEnum;
+import jakarta.persistence.*;
+import lombok.*;
+import lombok.experimental.FieldDefaults;
+
+import java.util.Date;
+import java.util.List;
+
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
+@Entity
+@Table(name = "orders")
+public class OrderEntity {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    Long id;
+
+    @Column(name = "date")
+    Date date;
+
+    @Column(name = "total")
+    Long total;
+
+    @Column(name = "quantity_product")
+    Long quantity;
+
+    @Column(name = "address")
+    String address;
+
+    @Column(name = "phone")
+    String phone;
+
+    @Transient
+    private Boolean stockAdjusted = false;
+
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status_order")
+    StatusOrderEnum status;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    UserEntity user;
+
+    @OneToMany(
+            mappedBy = "order",              // phải đúng tên field ở OrderDetailEntity
+            fetch = FetchType.LAZY,          // để nguyên LAZY
+            cascade = CascadeType.ALL,       // lưu/ cập nhật chi tiết cùng đơn
+            orphanRemoval = true             // xoá chi tiết khi gỡ khỏi list
+    )
+    List<OrderDetailEntity> items;
+}
+

@@ -1,0 +1,13 @@
+spring:
+  datasource:
+    url: jdbc:mysql://mysql:3306/sports?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password: anhhadeptrai
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+server:
+  port: 8080
