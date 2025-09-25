@@ -33,11 +33,16 @@ public interface ProductRepository extends JpaRepository<ProductEntity, Long>, P
 
     List<ProductEntity> findByNameContainingOrDescriptionContainingAndStatus(String name, String description, StatusEnum status);
 
-    // Thêm 2 methods này vào ProductRepository
     Page<ProductEntity> findByStatus(StatusEnum status, Pageable pageable);
     Page<ProductEntity> findByNameContainingIgnoreCaseAndStatus(String name, StatusEnum status, Pageable pageable);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select p from ProductEntity p where p.id = :id")
     Optional<ProductEntity> lockById(@Param("id") Long id);
+
+    @Query("""
+        SELECT p FROM ProductEntity p
+        ORDER BY p.quantitySell DESC
+    """)
+    List<ProductEntity> findTopBestSellers(Pageable pageable);
 }

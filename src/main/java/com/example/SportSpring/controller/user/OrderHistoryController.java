@@ -27,7 +27,6 @@ public class OrderHistoryController {
     private final UserService userService;
     private final OrderService orderService;
 
-    /** Parse status an toàn, mặc định Dang_Xu_Ly nếu null/sai */
     private StatusOrderEnum parseStatus(String s) {
         if (s == null || s.isBlank()) return StatusOrderEnum.Dang_Xu_Ly;
         try {
@@ -51,8 +50,8 @@ public class OrderHistoryController {
         List<OrderItemRowResponse> rows = historyService.historyByStatus(userId, req);
 
         model.addAttribute("rows", rows);
-        model.addAttribute("status", st.name()); // dùng name() cho nav-pills
-        return "user/history"; // -> templates/user/history.html
+        model.addAttribute("status", st.name());
+        return "user/history";
     }
 
     @PostMapping("/cancel")
@@ -84,7 +83,7 @@ public class OrderHistoryController {
         }
 
         model.addAttribute("order", order);
-        model.addAttribute("items", order.getItems()); // List<OrderDetailEntity> hoặc DTO tương ứng
-        return "order/view"; // -> resources/templates/order/view.html
+        model.addAttribute("items", order.getItems());
+        return "order/view";
     }
 }

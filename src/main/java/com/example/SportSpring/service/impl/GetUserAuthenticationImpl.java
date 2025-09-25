@@ -18,27 +18,29 @@ public class GetUserAuthenticationImpl implements GetUserAuthentication {
     @Override
     public UserEntity getUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null) return null;
+        if (auth == null || !auth.isAuthenticated()
+                || auth.getPrincipal() == null
+                || "anonymousUser".equals(auth.getPrincipal())) {
+            return null;
+        }
 
         Object principal = auth.getPrincipal();
 
-        // Đăng nhập bằng tài khoản thường
-        if (principal instanceof UserDetailServiceImpl.CustomUserDetails custom) {
-            return custom.getUser();
+        // 1) Đăng nhập FORM: principal là UserDetails (User của Spring)
+        if (principal instanceof org.springframework.security.core.userdetails.User ud) {
+            // username ở đây CHÍNH LÀ email nếu bạn dùng email làm username
+            return userRepository.findByUsername(ud.getUsername()).orElse(null);
         }
 
-        // Đăng nhập OAuth2/OIDC (Google/Facebook)
-        if (principal instanceof OAuth2User oAuth2User) {
-            String email = oAuth2User.getAttribute("email"); // Google/Facebook đều có
+        // 2) Đăng nhập OAuth2: principal là OAuth2User
+        if (principal instanceof org.springframework.security.oauth2.core.user.OAuth2User oAuth2User) {
+            String email = oAuth2User.getAttribute("email");
             if (email != null) {
-                // bạn đã lưu username = email khi login OAuth
                 return userRepository.findByUsername(email).orElse(null);
             }
+            // fallback khác nếu cần (preferred_username, login, sub)...
         }
-        // 3) Trường hợp anonymousUser
-        if (principal instanceof String s && "anonymousUser".equals(s)) {
-            return null;
-        }
+
         return null;
     }
 }

@@ -11,6 +11,8 @@ import com.example.SportSpring.repository.UserRepository;
 import com.example.SportSpring.service.CloudinaryService;
 import com.example.SportSpring.service.CommentService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -18,7 +20,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class CommentServiceImpl implements CommentService {
@@ -30,7 +34,7 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     public List<CommentEntity> findByProductId(Long productId) {
-        return commentRepository.findByProductId(productId);
+        return commentRepository.findByProduct_Id(productId);
     }
 
     @Override
@@ -106,5 +110,39 @@ public class CommentServiceImpl implements CommentService {
         c.setRate(rate);
 
         commentRepository.save(c);
+    }
+    @Override
+    public Page<CommentEntity> findByProductId(Long productId, Pageable pageable) {
+        return commentRepository.findByProduct_IdOrderByCreateDateDesc(productId, pageable);
+    }
+
+    @Override
+    public long countByProductId(Long productId) {
+        return commentRepository.countByProduct_Id(productId);
+    }
+
+    @Override
+    public double getAverageRatingByProductId(Long productId) {
+        Double avg = commentRepository.avgRateByProductId(productId);
+        return (avg == null) ? 0.0 : avg;
+    }
+
+    @Override
+    public Map<Integer, Long> countStarsByProductId(Long productId) {
+        // khởi tạo đủ 1..5 = 0
+        Map<Integer, Long> result = new HashMap<>();
+        for (int s = 1; s <= 5; s++) result.put(s, 0L);
+
+        List<Object[]> rows = commentRepository.countByRate(productId);
+        if (rows != null) {
+            for (Object[] r : rows) {
+                Integer rate = (Integer) r[0];
+                Long cnt = (Long) r[1];
+                if (rate != null && rate >= 1 && rate <= 5) {
+                    result.put(rate, cnt);
+                }
+            }
+        }
+        return result;
     }
 }

@@ -281,7 +281,7 @@
               <h4 th:text="${product.name}">Product Name</h4>
               <div class="d-flex justify-content-between align-items-center">
                 <div>
-                  <span class="product-price" th:text="${product.price} + ' $'">Price</span>
+                  <span class="product-price" th:text="${product.price} + ' VNĐ'">Price</span>
                   <span class="badge badge-danger" th:text="'Giảm ' + ${product.discount} + '%'">Discount</span>
                 </div>
                 <a th:href="@{/home/product/{id}(id=${product.id})}" class="btn btn-primary">Chi tiết</a>
@@ -316,7 +316,7 @@
               <h4 th:text="${product.name}">Product Name</h4>
               <div class="d-flex justify-content-between align-items-center">
                 <div>
-                  <span class="product-price" th:text="${product.price} + ' $'">Price</span>
+                  <span class="product-price" th:text="${product.price} + ' VNĐ'">Price</span>
                   <span class="badge badge-danger" th:text="'Giảm ' + ${product.discount} + '%'">Discount</span>
                 </div>
                 <a th:href="@{/home/product/{id}(id=${product.id})}" class="btn btn-primary">Chi tiết</a>
@@ -369,11 +369,12 @@
               <h4 th:text="${product.name}">Product Name</h4>
               <div class="d-flex justify-content-between align-items-center">
                 <div>
-                  <span class="product-price" th:text="${product.price} + ' $'">Price</span>
+                  <span class="product-price" th:text="${product.price} + ' VNĐ'">Price</span>
                   <span class="badge badge-danger" th:text="'Giảm ' + ${product.discount} + '%'">Discount</span>
                 </div>
                 <a th:href="@{/home/product/{id}(id=${product.id})}" class="btn btn-primary">Chi tiết</a>
               </div>
+
             </div>
           </div>
         </div>
@@ -438,15 +439,14 @@
     <div class="ss-actions">
       <button class="ss-chip" onclick="quickBestSellers()">Tư vấn sản phẩm bán chạy</button>
 
-      <button class="ss-chip" onclick="quick('Kiểm tra trạng thái đơn hàng #12345')">Tra đơn #12345</button>
-      <button class="ss-chip" onclick="quick('Chính sách đổi trả như thế nào?')">Đổi trả</button>
+      <button class="ss-chip" onclick="quickOrderHistory()">Tra cứu trạng thái đơn hàng</button>
+
     </div>
   </div>
   <div id="ss-input" hidden>
     <input id="ss-msg" placeholder="Nhập câu hỏi..." />
     <button id="ss-send" class="btn btn-primary btn-sm">Gửi</button>
   </div>
-  <button id="ss-handoff" class="btn btn-warning btn-sm">Nhân viên</button>
 
 </div>
 
@@ -573,8 +573,6 @@
     return true;
   }
 </script>
-
-<!-- Chat logic (nâng cấp) -->
 <script>
   const el = (id)=>document.getElementById(id);
   let conversationId=null;
@@ -586,41 +584,90 @@
     el('ss-log').hidden=min; el('ss-input').hidden=min;
   };
 
-  // Helpers
   function getCsrf(){
     const m = document.querySelector('meta[name="_csrf"]');
     return m ? m.getAttribute('content') : '';
   }
-  function avatarFor(role){
-    return role==='AI' ? '/image/bot.png' : '/image/user.png'; // tuỳ bạn đặt ảnh
-  }
-  function appendMsg(sender, text){
+  function avatarFor(role){ return role==='AI' ? '/image/bot.png' : '/image/user.png'; }
+  function appendMsg(sender, html){
     const cls = sender==='USER'?'user':'ai';
-    const html = `
+    const tpl = `
       <div class="ss-msg ${cls}">
         ${sender==='AI'?`<img class="ss-avatar" src="${avatarFor('AI')}" onerror="this.style.display='none'">`:''}
-        <div class="ss-bubble">${text}</div>
+        <div class="ss-bubble">${html}</div>
         ${sender==='USER'?`<img class="ss-avatar" src="${avatarFor('USER')}" onerror="this.style.display='none'">`:''}
       </div>`;
-    el('ss-log').insertAdjacentHTML('beforeend', html);
+    el('ss-log').insertAdjacentHTML('beforeend', tpl);
     el('ss-log').scrollTop=el('ss-log').scrollHeight;
   }
-  function showTyping(){
-    const d=document.createElement('div');
-    d.className='ss-typing'; d.id='ss-typing';
-    d.textContent='Bot đang trả lời...';
-    el('ss-log').appendChild(d);
-    el('ss-log').scrollTop=el('ss-log').scrollHeight;
-  }
-  function hideTyping(){
-    const t=document.getElementById('ss-typing');
-    if(t) t.remove();
-  }
-  function quick(text){
-    el('ss-msg').value = text;
-    send();
+  function showTyping(){ const d=document.createElement('div'); d.id='ss-typing'; d.className='ss-typing'; d.textContent='Bot đang trả lời...'; el('ss-log').appendChild(d); el('ss-log').scrollTop=el('ss-log').scrollHeight; }
+  function hideTyping(){ const t=document.getElementById('ss-typing'); if(t) t.remove(); }
+  function quick(text){ el('ss-msg').value=text; send(); }
+
+  // ===== Best sellers =====
+  function renderProducts(items){
+    if(!Array.isArray(items) || !items.length){ appendMsg('AI','Hiện chưa có dữ liệu sản phẩm bán chạy.'); return; }
+    let html = '<b>🔥 Sản phẩm bán chạy:</b><br/>';
+    html += items.map(p => `
+      <div style="margin:6px 0; padding:6px; border:1px solid #eee; border-radius:8px; background:#fff;">
+        <img src="${p.thumbnailUrl || '/images/no-image.png'}"
+             style="width:60px;height:60px;object-fit:cover;border-radius:6px;vertical-align:middle;margin-right:8px"/>
+        <b>${p.name}</b> — ${Number(p.price||0).toLocaleString()}₫
+        <div style="margin-top:4px">
+          <a href="${p.detailUrl}" style="color:#3498db;text-decoration:none;">👉 Xem chi tiết</a>
+        </div>
+      </div>
+    `).join('');
+    appendMsg('AI', html);
   }
 
+  async function quickBestSellers(){
+    appendMsg('USER','Tư vấn sản phẩm bán chạy');
+    showTyping();
+    try{
+      const res = await fetch('/api/chat/best-sellers', { credentials:'same-origin' });
+      const items = await res.json();
+      hideTyping();
+      renderProducts(items);
+    }catch(e){
+      hideTyping();
+      appendMsg('AI','Xin lỗi, không lấy được danh sách sản phẩm.');
+    }
+  }
+  window.quickBestSellers = quickBestSellers;
+
+  // ===== Lịch sử đơn (KHÔNG hiển thị date) =====
+  function renderOrderList(orders){
+    if(!Array.isArray(orders) || !orders.length){ appendMsg('AI','Bạn chưa có đơn hàng nào.'); return; }
+    let html = '<b>📦 Lịch sử đơn hàng của bạn:</b><br/>';
+    html += orders.map(o => `
+      <div class="ss-chip" style="display:inline-block;margin:6px 6px 0 0;padding:6px 10px;border:1px solid #ddd;border-radius:999px;background:#fff">
+        ${o.code} · ${o.status} · ${Number(o.total||0).toLocaleString()}₫
+      </div>
+    `).join('');
+    appendMsg('AI', html);
+  }
+
+  async function quickOrderHistory(){
+    appendMsg('USER','Tra cứu trạng thái đơn hàng');
+    showTyping();
+    try{
+      const res = await fetch('/api/chat/my-orders', { method:'GET', credentials:'same-origin' });
+      hideTyping();
+      if(res.status === 401){
+        appendMsg('AI','Vui lòng <a href="/login">đăng nhập</a> để xem lịch sử đơn hàng.');
+        return;
+      }
+      const orders = await res.json();
+      renderOrderList(orders);
+    }catch(e){
+      hideTyping();
+      appendMsg('AI','Xin lỗi, không lấy được lịch sử đơn hàng.');
+    }
+  }
+  window.quickOrderHistory = quickOrderHistory;
+
+  // ===== Chat AI chung (giữ nếu cần) =====
   async function send(){
     const m = el('ss-msg').value.trim();
     if(!m) return;
@@ -631,57 +678,22 @@
       const res = await fetch('/api/chat', {
         method:'POST',
         headers:{'Content-Type':'application/json','X-CSRF-TOKEN': getCsrf()},
+        credentials:'same-origin',
         body: JSON.stringify({conversationId, message:m})
       });
       const data = await res.json();
-      conversationId=data.conversationId;
       hideTyping();
-      appendMsg('AI', data.answer);
-      if(data.handoff){
-        appendMsg('AI', '<i>💡 Tôi sẽ chuyển bạn sang nhân viên hỗ trợ.</i>');
-      }
+      appendMsg('AI', data.answer || '...');
     }catch(e){
       hideTyping();
-      appendMsg('AI', 'Xin lỗi, hệ thống đang bận. Vui lòng thử lại sau.');
+      appendMsg('AI','Xin lỗi, hệ thống đang bận. Vui lòng thử lại sau.');
     }
   }
   el('ss-send').onclick=send;
-  el('ss-msg').addEventListener('keydown',e=>{if(e.key==='Enter') send();});
-
-  function appendProducts(products) {
-  let html = '<div class="ss-msg ai"><div class="ss-bubble">';
-  html += '<b>🔥 Đây là sản phẩm bán chạy:</b><br/>';
-  products.forEach(p => {
-    html += `
-      <div style="margin:6px 0; padding:6px; border:1px solid #eee; border-radius:8px; background:#fff;">
-        <img src="${p.image}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;vertical-align:middle;margin-right:8px"/>
-        <b>${p.name}</b> - ${p.price}₫
-        <br/>
-        <a href="/home/product/${p.id}" target="_blank" style="color:#3498db;text-decoration:none;">
-          👉 Xem chi tiết
-        </a>
-      </div>`;
-  });
-  html += '</div></div>';
-  el('ss-log').insertAdjacentHTML('beforeend', html);
-  el('ss-log').scrollTop = el('ss-log').scrollHeight;
-}
-
-async function quickBestSellers() {
-  appendMsg('USER', 'Tư vấn giày chạy bộ nam size 42');
-  showTyping();
-  try {
-    const res = await fetch('/api/chat/bestsellers');
-    const products = await res.json();
-    hideTyping();
-    appendProducts(products);
-  } catch (e) {
-    hideTyping();
-    appendMsg('AI', 'Xin lỗi, không lấy được danh sách sản phẩm.');
-  }
-}
-
+  el('ss-msg').addEventListener('keydown',e=>{ if(e.key==='Enter') send(); });
 </script>
+
+
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 <script>

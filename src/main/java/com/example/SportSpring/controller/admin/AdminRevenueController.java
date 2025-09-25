@@ -24,7 +24,6 @@ public class AdminRevenueController {
         this.revenueService = revenueService;
     }
 
-    // ===== Helpers =====
     private static LocalDate parseFlexible(String s) {
         if (s == null || s.isBlank()) return null;
         DateTimeFormatter[] fmts = new DateTimeFormatter[] {
@@ -106,7 +105,6 @@ public class AdminRevenueController {
         return revenueService.getTopProducts(r[0], r[1]);
     }
 
-    // Top 10 sản phẩm bán chạy (sắp xếp theo số lượng bán)
     @GetMapping(value = "/top-products", produces = MediaType.APPLICATION_JSON_VALUE)
     @ResponseBody
     public List<Map<String, Object>> topProducts(@RequestParam(required = false) String from,

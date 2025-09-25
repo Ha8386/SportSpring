@@ -33,22 +33,11 @@ public class PaymentController {
     @Autowired private PaymentService paymentService;
     @Autowired private OrderService orderService;
     @Autowired private UserService userService;
-
-    // để ghi trực tiếp total và lấy chủ sở hữu order
     @Autowired private OrderRepository orderRepository;
-
-    // để xóa giỏ sau khi chốt đơn
     @Autowired private CartService cartService;
-
-    // để lấy current user khi cần tạo order
     @Autowired private GetUserAuthentication getUserAuthentication;
 
-    /**
-     * Trang payment:
-     * - Nếu chưa có orderId -> AddOrder(user) sẽ TỰ động lấy giỏ của user, tạo Order + OrderDetails,
-     *   set tổng tiền & tổng số lượng (quantity = SUM(cart.quantity)), rồi redirect lại kèm orderId.
-     * - Nếu đã có orderId -> hiển thị payment, subtotal dùng từ server (order.total) nếu có.
-     */
+
     @GetMapping
     public String showPaymentPage(@RequestParam(value = "orderId", required = false) Long orderId,
                                   @RequestParam(value = "addressId", required = false) Long addressIdParam,
@@ -58,7 +47,6 @@ public class PaymentController {
 
         Long addressId = (addressIdParam != null) ? addressIdParam : addressidParam;
 
-        // Nếu thiếu orderId: tạo đơn từ GIỎ của user hiện tại (bao gồm OrderDetails + tổng số lượng + tổng tiền)
         if (orderId == null) {
             UserEntity user = getUserAuthentication.getUser();
             Long newOrderId = orderService.AddOrder(user);
@@ -89,11 +77,7 @@ public class PaymentController {
         return "user/payment";
     }
 
-    /**
-     * Người dùng bấm Proceed to Payment.
-     * - COD: lưu total (nếu thiếu), đổi trạng thái, xóa giỏ.
-     * - VNPAY: chuyển sang VNPay, total dùng order.total/subtotal.
-     */
+
     @PostMapping("/process")
     public String processPayment(@RequestParam("orderId") Long orderId,
                                  @RequestParam(value = "addressId", required = false) Long addressId,
@@ -112,7 +96,6 @@ public class PaymentController {
                 userService.updateOrderAddress(orderId, addressId);
             }
 
-            // amount = order.total nếu >0, không thì lấy subtotal từ form
             Long amount = (orderDto.getTotal() != null && orderDto.getTotal() > 0)
                     ? orderDto.getTotal()
                     : (subtotalParam != null && subtotalParam > 0 ? subtotalParam : null);
@@ -155,16 +138,13 @@ public class PaymentController {
         }
     }
 
-    /**
-     * Callback từ VNPay.
-     */
     @GetMapping("/vnpay-payment")
     public String vnpayPayment(HttpServletRequest request, RedirectAttributes redirectAttributes) {
         try {
-            String code = request.getParameter("vnp_ResponseCode");      // "00" = success
-            String status = request.getParameter("vnp_TransactionStatus"); // "00" = success
-            String txnRef = request.getParameter("vnp_TxnRef");           // orderId
-            String vnpAmount = request.getParameter("vnp_Amount");        // x100
+            String code = request.getParameter("vnp_ResponseCode");
+            String status = request.getParameter("vnp_TransactionStatus");
+            String txnRef = request.getParameter("vnp_TxnRef");
+            String vnpAmount = request.getParameter("vnp_Amount");
 
             log.info("[VNPAY][CALLBACK] code={} status={} txnRef={} amount={}", code, status, txnRef, vnpAmount);
 
@@ -183,7 +163,7 @@ public class PaymentController {
 
                     Long amount = null;
                     try {
-                        if (vnpAmount != null) amount = Long.parseLong(vnpAmount) / 100; // VNPay x100
+                        if (vnpAmount != null) amount = Long.parseLong(vnpAmount) / 100;
                     } catch (NumberFormatException ignore) {}
 
                     persistTotalIfMissing(orderId, amount);
@@ -216,7 +196,6 @@ public class PaymentController {
 
     // ================= Helpers =================
 
-    /** Ghi total vào DB nếu còn null/0 và amount hợp lệ. */
     private void persistTotalIfMissing(Long orderId, Long amount) {
         if (amount == null || amount <= 0) return;
         Optional<OrderEntity> op = orderRepository.findById(orderId);
@@ -230,7 +209,6 @@ public class PaymentController {
         }
     }
 
-    /** Xóa tất cả sản phẩm trong giỏ của chủ sở hữu đơn. */
     private void clearCartOfOrderOwner(Long orderId) {
         orderRepository.findById(orderId).ifPresent(oe -> {
             try {

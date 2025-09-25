@@ -23,17 +23,14 @@ public class ProductManagementController {
     private final BrandService brandService;
     private final CategoryService categoryService;
     private final ImageService imageService;
-//    private final ProductExcelService excelService;
 
     public ProductManagementController(ProductService productService, BrandService brandService, CategoryService categoryService, ImageService imageService) {
         this.productService = productService;
         this.brandService = brandService;
         this.categoryService = categoryService;
         this.imageService = imageService;
-//        this.excelService = excelService;
     }
 
-    // View all product
     @GetMapping
     public ModelAndView getAllProducts(
             @RequestParam(defaultValue = "0") int page,
@@ -64,7 +61,6 @@ public class ProductManagementController {
         return mav;
     }
 
-    // View product by ID
     @GetMapping("/{productId}")
     public ModelAndView getProduct(@PathVariable Long productId){
         ProductResponse product = productService.getProductById(productId);

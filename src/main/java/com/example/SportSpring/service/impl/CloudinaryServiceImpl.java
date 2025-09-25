@@ -20,7 +20,6 @@ public class CloudinaryServiceImpl implements CloudinaryService {
     @Autowired
     private Cloudinary cloudinary;
 
-    // === method CŨ: giữ nguyên chữ ký (dùng ở các chỗ khác) ===
     @Override
     public String uploadFile(MultipartFile file) throws IOException {
         if (file == null || file.isEmpty()) return null;
@@ -29,7 +28,7 @@ public class CloudinaryServiceImpl implements CloudinaryService {
                 file.getBytes(),
                 ObjectUtils.asMap(
                         "public_id", UUID.randomUUID().toString(),
-                        "resource_type", "auto",     // ảnh hoặc video
+                        "resource_type", "auto",
                         "unique_filename", false,
                         "overwrite", true
                 )
@@ -40,7 +39,6 @@ public class CloudinaryServiceImpl implements CloudinaryService {
         return url != null ? url.toString() : null;
     }
 
-    // === Overload: upload 1 file kèm folder (vd: comments/2025/09) ===
     @Override
     public String uploadFile(MultipartFile file, String folder) throws IOException {
         if (file == null || file.isEmpty()) return null;

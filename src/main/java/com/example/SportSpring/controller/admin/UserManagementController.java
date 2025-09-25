@@ -30,7 +30,6 @@ public class UserManagementController {
         return mav;
     }
 
-    // View User by ID
     @GetMapping("/{userId}")
     public ModelAndView getUserById(@PathVariable Long userId) {
 
@@ -42,7 +41,6 @@ public class UserManagementController {
         return mav;
     }
 
-    // Create User
     @GetMapping("/create")
     public ModelAndView createUser() {
 

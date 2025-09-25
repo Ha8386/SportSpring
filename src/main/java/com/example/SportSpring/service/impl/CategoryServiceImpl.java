@@ -47,7 +47,6 @@ public class CategoryServiceImpl implements CategoryService {
         Page<CategoryEntity> entities;
 
         if (name != null && !name.trim().isEmpty()) {
-            // Có name -> dùng method tìm theo name và status
             entities = categoryRepository.findByNameContainingIgnoreCaseAndStatus(name, status, pageable);
         } else {
             entities = categoryRepository.findByStatus(status, pageable);

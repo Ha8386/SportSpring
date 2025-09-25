@@ -30,21 +30,20 @@ public class AccountController {
     /** Lấy key đăng nhập (email/username) an toàn cho cả Form & Google */
     private String resolveLoginKey(Object principal) {
         if (principal instanceof User ud) {
-            return ud.getUsername(); // form-login
+            return ud.getUsername();
         }
-        if (principal instanceof OAuth2User ou) { // google
+        if (principal instanceof OAuth2User ou) {
             String email = ou.getAttribute("email");
-            if (email != null) return email;      // CustomOAuth2UserService đã set username=email
+            if (email != null) return email;
             String username = ou.getAttribute("username");
             if (username != null) return username;
-            return ou.getName(); // fallback (sub)
+            return ou.getName();
         }
         return null;
     }
 
-    /** Luôn tìm theo username (đang dùng username=email cho Google) */
     private UserEntity loadCurrentUserOrThrow(String key) {
-        return userService.findByUserName(key); // đã throw nếu không tìm thấy
+        return userService.findByUserName(key);
     }
 
     @GetMapping("/info")

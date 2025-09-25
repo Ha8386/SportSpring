@@ -32,6 +32,7 @@ public class SecurityConfig {
     private final UserDetailServiceImpl userDetailsService;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
+    private final RoleBasedLoginSuccessHandler roleBasedLoginSuccessHandler;
     private final PasswordEncoder passwordEncoder;
 
     @Bean
@@ -42,7 +43,36 @@ public class SecurityConfig {
         return new ProviderManager(provider);
     }
 
-    // (1) API security cho /api/** (stateless)
+    /**
+     * (0) CHAT chain – dùng SESSION (IF_REQUIRED) để đọc phiên đăng nhập formLogin/OAuth2.
+     * Áp dụng CHỈ cho /api/chat/** và đứng trước các chain khác.
+     */
+    @Bean
+    @Order(0)
+    public SecurityFilterChain chatSecurity(HttpSecurity http) throws Exception {
+        http
+                .securityMatcher("/api/chat/**")
+                // Nếu bạn chỉ GET thì có thể bật CSRF; ở đây disable cho đơn giản với fetch
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(Customizer.withDefaults())
+                .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/chat/best-sellers", "/api/chat/order-status").permitAll()
+                        .requestMatchers("/api/chat/my-orders").authenticated()
+                        .anyRequest().authenticated()
+                )
+                // cần bật formLogin để chain này hiểu session đăng nhập
+                .formLogin(Customizer.withDefaults())
+                .oauth2Login(oauth2 -> oauth2
+                        .userInfoEndpoint(u -> u.userService(customOAuth2UserService))
+                        .successHandler(roleBasedLoginSuccessHandler)
+                );
+        return http.build();
+    }
+
+    /**
+     * (1) API chain – Stateless (ví dụ JWT) cho /api/** còn lại.
+     */
     @Bean
     @Order(1)
     public SecurityFilterChain apiSecurity(HttpSecurity http) throws Exception {
@@ -52,6 +82,9 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // có/không có 2 dòng dưới đều được; chain 0 đã xử lý /api/chat/**
+                        .requestMatchers("/api/chat/best-sellers", "/api/chat/order-status").permitAll()
+                        .requestMatchers("/api/chat/my-orders").authenticated()
                         .requestMatchers(PUBLIC_URLS).permitAll()
                         .anyRequest().authenticated()
                 )
@@ -62,30 +95,28 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // (2) Web security (stateful)
+    /**
+     * (2) WEB chain – cho trang Thymeleaf (stateful).
+     */
     @Bean
     @Order(2)
-    public SecurityFilterChain webSecurity(HttpSecurity http,
-                                           RoleBasedLoginSuccessHandler roleBasedLoginSuccessHandler) throws Exception {
+    public SecurityFilterChain webSecurity(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers(PUBLIC_URLS).permitAll()
-                        .requestMatchers("/admin/**").hasRole("ADMIN")   // <--- BẮT BUỘC: chặn admin page
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/user/**").authenticated()
-                        .requestMatchers("/api/chat").permitAll()
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
                         .loginPage("/login")
-                        // .defaultSuccessUrl("/home", true)  // BỎ
-                        .successHandler(roleBasedLoginSuccessHandler)     // <--- dùng handler
+                        .successHandler(roleBasedLoginSuccessHandler)
                         .permitAll()
                 )
                 .oauth2Login(oauth2 -> oauth2
                         .loginPage("/login")
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
-                        // .defaultSuccessUrl("/home", true)  // BỎ
-                        .successHandler(roleBasedLoginSuccessHandler)     // <--- dùng handler chung
+                        .successHandler(roleBasedLoginSuccessHandler)
                 )
                 .logout(logout -> logout
                         .logoutSuccessUrl("/login?logout")

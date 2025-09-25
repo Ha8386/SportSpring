@@ -17,7 +17,6 @@ public interface CategoryRepository extends JpaRepository<CategoryEntity, Long> 
 
     Optional<CategoryEntity> findByName(String name);
 
-    // Thêm 2 methods này vào ProductRepository
     Page<CategoryEntity> findByStatus(StatusEnum status, Pageable pageable);
     Page<CategoryEntity> findByNameContainingIgnoreCaseAndStatus(String name, StatusEnum status, Pageable pageable);
 

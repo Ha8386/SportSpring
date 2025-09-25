@@ -98,4 +98,6 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
         where o.id = :id
     """)
     Optional<OrderEntity> findByIdFetchItems(@Param("id") Long id);
+
+    List<OrderEntity> findByUser_IdOrderByDateDesc(Long userId);
 }

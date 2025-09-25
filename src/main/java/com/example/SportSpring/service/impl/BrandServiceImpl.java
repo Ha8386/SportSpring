@@ -47,7 +47,6 @@ public class BrandServiceImpl implements BrandService {
         Page<BrandEntity> entities;
 
         if (name != null && !name.trim().isEmpty()) {
-            // Có name -> dùng method tìm theo name và status
             entities = brandRepository.findByNameContainingIgnoreCaseAndStatus(name, status, pageable);
         } else {
             entities = brandRepository.findByStatus(status, pageable);

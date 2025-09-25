@@ -2,10 +2,13 @@ package com.example.SportSpring.service;
 
 import com.example.SportSpring.dto.response.AdminCommentRow;
 import com.example.SportSpring.entity.CommentEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 public interface CommentService {
@@ -25,4 +28,8 @@ public interface CommentService {
     void delete(Long commentId);
 
     void createUserComment(Long userId, Long productId, String messages, Integer rate, List<MultipartFile> media);
+    Page<CommentEntity> findByProductId(Long productId, Pageable pageable);
+    long countByProductId(Long productId);
+    double getAverageRatingByProductId(Long productId);
+    Map<Integer, Long> countStarsByProductId(Long productId);
 }

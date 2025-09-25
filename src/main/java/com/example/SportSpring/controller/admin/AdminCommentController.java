@@ -25,30 +25,17 @@ public class AdminCommentController {
      */
     @GetMapping
     public String list(Model model) {
-        // Lấy danh sách comment dưới dạng DTO cho admin
         List<AdminCommentRow> rows = service.listForAdmin();
-
-        // Đưa danh sách này vào model để render ra view
         model.addAttribute("comments", rows);
-
-        // Trả về tên view: "templates/admin/comment/comment.html"
         return "admin/comment/comment";
     }
 
-    /**
-     * Hàm này cho phép admin xóa comment theo id
-     */
     @PostMapping("/{id}/delete")
     public String delete(@PathVariable Long id) {
-        // Gọi service để xóa comment
         service.delete(id);
-
         return "redirect:/admin/comment?deleted=" + id;
     }
 
-    /**
-     * Hàm này cho phép admin phản hồi  comment của user
-     */
     @PostMapping("/{id}/reply")
     public String reply(@PathVariable Long id,
                         @RequestParam("replyText") String replyText) {

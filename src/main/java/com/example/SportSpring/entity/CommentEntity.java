@@ -19,28 +19,22 @@ public class CommentEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
-    // Số sao (1..5)
     @Column(name = "rate", nullable = false)
     Integer rate;
 
-    // Nội dung đánh giá
     @Column(name = "messages", nullable = false, length = 2000)
     String messages;
 
-    // Thời điểm tạo (cột DB là 'date')
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "date", nullable = false)
     Date createDate;
 
-    // Đường dẫn ảnh/video do khách gửi (png/jpg/jpeg/gif/mp4/webm/ogg...)
     @Column(name = "media_url", length = 255)
     String mediaUrl;
 
-    // Phản hồi của admin (tùy chọn)
     @Column(name = "admin_reply", length = 2000)
     String adminReply;
 
-    // Thời điểm admin trả lời (tùy chọn)
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "reply_date")
     Date replyDate;

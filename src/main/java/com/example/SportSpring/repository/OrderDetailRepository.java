@@ -37,13 +37,7 @@ public interface OrderDetailRepository extends JpaRepository<OrderDetailEntity, 
                                          @Param("to")   LocalDate to);
 
 
-    /* ================== Doanh thu theo DANH MỤC ==================
-       - LEFT JOIN để không bỏ sót sản phẩm chưa gán danh mục
-       - Doanh thu = SUM(od.total)
-       - Lọc đơn đã giao
-       - Khoảng ngày end-exclusive: to + 1 day
-       - Gộp tên null thành 'Khác' để tránh group bị tách
-    ================================================================= */
+    /* ================== Doanh thu theo DANH MỤC ==================*/
     @Query(value = """
         SELECT COALESCE(cp.name_category, 'Khác') AS category_name,
                COALESCE(SUM(od.total), 0)        AS revenue
@@ -78,7 +72,6 @@ public interface OrderDetailRepository extends JpaRepository<OrderDetailEntity, 
 
 
 
-// Bản mở rộng (10 tham số) kèm reviewDate = max(c.createDate)
     @Query("""
         select new com.example.SportSpring.dto.response.OrderItemRowResponse(
             o.id,
